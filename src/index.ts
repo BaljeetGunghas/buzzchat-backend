@@ -14,10 +14,15 @@ interface CustomSocket extends Socket<DefaultEventsMap, DefaultEventsMap, Defaul
 // 2. Create HTTP server from Express app
 const httpServer = createServer(app);
 
+const allowedOrigins = [
+  'https://velvet-haven.netlify.app', // ✅ Remove trailing slash
+  /^http:\/\/localhost:\d+$/ // ✅ Allow all localhost ports
+];
+
 // 3. Setup Socket.IO with CORS config
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
