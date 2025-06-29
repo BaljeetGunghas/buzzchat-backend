@@ -11,10 +11,14 @@ const server_1 = __importDefault(require("./server")); // your Express app
 const User_1 = require("./models/User");
 // 2. Create HTTP server from Express app
 const httpServer = (0, http_1.createServer)(server_1.default);
+const allowedOrigins = [
+    'https://velvet-haven.netlify.app', // ✅ Remove trailing slash
+    /^http:\/\/localhost:\d+$/ // ✅ Allow all localhost ports
+];
 // 3. Setup Socket.IO with CORS config
 const io = new socket_io_1.Server(httpServer, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: allowedOrigins,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],

@@ -139,7 +139,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpires;
     await user.save();
-    const baseUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}&email=${email}`;
 
     console.log(resetLink);
