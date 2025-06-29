@@ -12,6 +12,6 @@ router.get('/', authMiddleware, getAllUsers);
 router.get('/:id', authMiddleware, getUserById);
 
 // Get currently online users (optional)
-router.get('/status/online', authMiddleware, getOnlineUsers);
+router.post('/status/online', authMiddleware, getOnlineUsers);
 
 export default router;

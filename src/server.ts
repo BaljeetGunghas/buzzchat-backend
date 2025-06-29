@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes...
-app.get("/", (req, res) => res.send("BuzzChat API is running 🚀"));
+app.get("/api/", (req, res) => res.send("BuzzChat API is running 🚀"));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/conversations", conversationRoutes);

@@ -8,6 +8,7 @@ export interface IUser {
     profile_picture: string;
     status: string;
     date_of_birth: Date;
+    gender:string|null;
     isVerified?: boolean | null;
     lastLogin?: Date | null;
     resetPasswordToken?: string | null;
@@ -28,8 +29,9 @@ const userSchema = new mongoose.Schema<IUserDocument>({
     password: { type: String, required: true }, //password
     phone_number: { type: String, default: null }, //phone number
     profile_picture: { type: String, default: null },
-    status: { type: String, enum: ['online', 'ofline', 'banned'], default: 'online' },    //active, inactive, banned
+    status: { type: String, enum: ['online', 'offline', 'banned'], default: 'online' },    //active, inactive, banned
     date_of_birth: { type: Date, default: null },
+    gender: { type: String, default: null },
     //advance 
     isVerified: { type: Boolean, default: false },  //email verification
     lastLogin: { type: Date, default: Date.now },      //last login

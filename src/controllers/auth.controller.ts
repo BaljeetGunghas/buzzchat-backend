@@ -139,8 +139,11 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpires;
     await user.save();
+    const baseUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}&email=${email}`;
 
-    const resetLink = `https://your-frontend.com/reset-password?token=${resetToken}&email=${email}`;
+    console.log(resetLink);
+
 
     const emailSent = await sendResetEmail(email, resetLink);
     if (!emailSent) {
@@ -156,28 +159,70 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
   }
 };
 
+
+
+export const resetPassword = async (req: Request, res: Response): Promise<Response> => {
+  const { token, email, password } = req.body;
+
+  if (!token || !email || !password) {
+    return res
+      .status(400)
+      .json(resFormat(400, 'Missing fields', null, 0));
+  }
+
+  try {
+    // Find user by email and token, and ensure token is not expired
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }, // Token expiration check
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json(resFormat(400, 'Invalid or expired token', null, 0));
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Update the password and clear the reset fields
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json(resFormat(200, 'Password updated successfully', null, 1));
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res
+      .status(500)
+      .json(resFormat(500, 'Server error', null, 0));
+  }
+};
+
+
+
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
+
     if (!userId) {
       return res.status(401).json(resFormat(401, "Unauthorized", null, 0));
     }
 
-    const { name, phone_number, date_of_birth } = req.body;
+    const { name, phone_number, date_of_birth, gender } = req.body;
     let profile_picture = req.body.profile_picture;
 
-    // If file is uploaded via multer, override the profile_picture
+    // If file is uploaded via multer + Cloudinary
     if (req.file) {
-      profile_picture = `/uploads/profile-pictures/${req.file.filename}`;
-
-      // Optionally remove old profile picture
-      const user = await User.findById(userId);
-      if (user?.profile_picture) {
-        const oldPath = path.join(__dirname, "../../uploads/profile-pictures", path.basename(user.profile_picture));
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      }
+      const uploadedImage = req.file as any; // cloudinary-multer returns `path` (secure_url)
+      profile_picture = uploadedImage.path; // Cloudinary secure URL
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -186,12 +231,15 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
         $set: {
           ...(name && { name }),
           ...(phone_number && { phone_number }),
-          ...(profile_picture && { profile_picture }),
           ...(date_of_birth && { date_of_birth }),
+          ...(gender && { gender }),
+          ...(profile_picture && { profile_picture }),
         },
       },
       { new: true }
-    ).select("-password -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires");
+    ).select(
+      "-password -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires"
+    );
 
     if (!updatedUser) {
       return res.status(404).json(resFormat(404, "User not found", null, 0));

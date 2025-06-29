@@ -1,15 +1,14 @@
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import mongoose from "mongoose";
-import cors from "cors";
 import app from "./server"; // your Express app
+import { User } from "./models/User";
+import { Socket } from "socket.io";
+import { DefaultEventsMap } from "socket.io/dist/typed-events";
 
-interface MessagePayload {
-  senderId: string;
-  receiverId: string;
-  content: string;
-  conversationId: string;
-  createdAt?: string;
+
+interface CustomSocket extends Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any> {
+  userId?: string;
 }
 
 // 2. Create HTTP server from Express app
@@ -25,39 +24,74 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
-// Map to keep track of userId to socket.id (optional)
+// Map to keep track of userId to socket.id 
 const onlineUsers = new Map<string, string>();
 
-// Handle socket connections
-io.on("connection", (socket) => {
-  console.log("✅ New client connected:", socket.id);
+io.on("connection", async (socket: CustomSocket) => {
 
-  socket.on("join", (userId: string) => {
+
+  const broadcastOnlineUsers = async () => {
+    const onlineUserIds = Array.from(onlineUsers.keys());
+    console.log(onlineUserIds);
+    io.emit("online_users", onlineUserIds);
+  };
+
+  socket.on("join", async (userId: string) => {
+    socket.userId = userId;
+    console.log(userId);
+
     onlineUsers.set(userId, socket.id);
-    socket.join(userId);
-    console.log(`User ${userId} joined room ${userId}`);
-  });
 
-  socket.on("send_message", (data: MessagePayload) => {
-    const { receiverId } = data;
-    if (receiverId) {
-      io.to(receiverId).emit("receive_message", data);
-      console.log(`Message sent to user ${receiverId}`);
-    } else {
-      io.emit("receive_message", data);
+    try {
+      await User.updateOne({ _id: userId }, { status: "online" });
+      console.log(`User ${userId} marked as online`);
+      await broadcastOnlineUsers();
+
+      socket.broadcast.emit("user_status_change", {
+        userId,
+        status: "online",
+      });
+    } catch (error) {
+      console.error("Failed to update online status:", error);
     }
   });
 
-  socket.on("disconnect", () => {
-    onlineUsers.forEach((value, key) => {
-      if (value === socket.id) {
-        onlineUsers.delete(key);
-        console.log(`User ${key} disconnected and removed from online users`);
-      }
-    });
-    console.log("❌ Client disconnected:", socket.id);
+  socket.on("disconnect", async () => {
+    if (!socket.userId) return;
+
+    console.log(socket.userId);
+
+    onlineUsers.delete(socket.userId);
+
+    try {
+      await User.updateOne({ _id: socket.userId }, { status: "offline" });
+      console.log(`User ${socket.userId} marked as offline`);
+      await broadcastOnlineUsers();
+
+      // ✅ Notify others
+      socket.broadcast.emit("user_status_change", {
+        userId: socket.userId,
+        status: "offline",
+      });
+    } catch (error) {
+      console.error("Failed to update offline status:", error);
+    }
   });
+
+  socket.emit("online_users", Array.from(onlineUsers.keys()));
+
+  // Handle message
+  socket.on("send_message", (message) => {
+    const { receiverId } = message;
+    const receiverSocket = onlineUsers.get(receiverId);
+    if (receiverSocket) {
+      io.to(receiverSocket).emit("receive_message", message);
+    }
+  });
+
 });
+
+
 
 // MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/buzzchat";

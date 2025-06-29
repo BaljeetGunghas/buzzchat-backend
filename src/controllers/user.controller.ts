@@ -4,6 +4,13 @@ import { Request, Response } from 'express';
 import { User } from '../models/User';
 import { resFormat } from '../utils/resFormat';
 
+
+
+interface AuthRequest extends Request {
+  user?: { id: string };
+}
+
+
 // Get all users (excluding password and sensitive fields)
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -27,11 +34,24 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-// Get online users (you'll need to track this with socket.io and DB or in-memory store)
-export const getOnlineUsers = async (req: Request, res: Response) => {
+
+
+export const getOnlineUsers = async (req: AuthRequest, res: Response) => {
   try {
-    const onlineUsers = await User.find({ status: 'online' }).select('-password -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires -createdAt -updatedAt');
-    res.status(200).json(resFormat(200, 'Online users fetched successfully', onlineUsers));
+    let { userIds } = req.body;
+
+    // Exclude logged-in user's ID from the list
+    const loggedInUserId = req.user?.id;
+    userIds = userIds.filter((id: string) => id !== loggedInUserId);
+
+    const onlineUsers = await User.find({ _id: { $in: userIds } })
+      .select(
+        '-password -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires -createdAt -updatedAt'
+      );
+
+    res.status(200).json(
+      resFormat(200, 'Online users fetched successfully', onlineUsers)
+    );
   } catch (error) {
     console.error('Error fetching online users:', error);
     res.status(500).json(resFormat(500, 'Server error', null, 0));
