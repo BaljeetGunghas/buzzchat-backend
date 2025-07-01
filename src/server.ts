@@ -39,7 +39,7 @@ app.get("/", (_req, res) => {
     </head>
     <body>
       <h1>Welcome to ChatBuzz</h1>
-      <p>Your messaging starts here.</p>
+      <p>Your messaging starts here..</p>
     </body>
     </html>
   `);
