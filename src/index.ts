@@ -97,6 +97,24 @@ io.on("connection", async (socket: CustomSocket) => {
 });
 
 
+app.get("/", (_req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>ChatBuzz</title>
+    </head>
+    <body>
+      <h1>Welcome to ChatBuzz</h1>
+      <p>Your messaging starts here.</p>
+    </body>
+    </html>
+  `);
+});
+
+
 
 // MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/buzzchat";
