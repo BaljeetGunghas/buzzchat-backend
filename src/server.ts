@@ -27,6 +27,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes...
+
+app.get("/", (_req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>ChatBuzz</title>
+    </head>
+    <body>
+      <h1>Welcome to ChatBuzz</h1>
+      <p>Your messaging starts here.</p>
+    </body>
+    </html>
+  `);
+});
+
+
 app.get("/api/", (req, res) => res.send("BuzzChat API is running 🚀"));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);

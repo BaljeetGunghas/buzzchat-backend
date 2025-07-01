@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: buzzchat-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
