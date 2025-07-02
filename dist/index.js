@@ -8,7 +8,7 @@ const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const mongoose_1 = __importDefault(require("mongoose"));
 const server_1 = __importDefault(require("./server")); // your Express app
-const User_1 = require("./models/User");
+const socket_1 = require("./sockets/socket");
 // 2. Create HTTP server from Express app
 const httpServer = (0, http_1.createServer)(server_1.default);
 const allowedOrigins = [
@@ -25,60 +25,8 @@ const io = new socket_io_1.Server(httpServer, {
     },
 });
 exports.io = io;
-// Map to keep track of userId to socket.id 
-const onlineUsers = new Map();
-io.on("connection", async (socket) => {
-    const broadcastOnlineUsers = async () => {
-        const onlineUserIds = Array.from(onlineUsers.keys());
-        console.log(onlineUserIds);
-        io.emit("online_users", onlineUserIds);
-    };
-    socket.on("join", async (userId) => {
-        socket.userId = userId;
-        console.log(userId);
-        onlineUsers.set(userId, socket.id);
-        try {
-            await User_1.User.updateOne({ _id: userId }, { status: "online" });
-            console.log(`User ${userId} marked as online`);
-            await broadcastOnlineUsers();
-            socket.broadcast.emit("user_status_change", {
-                userId,
-                status: "online",
-            });
-        }
-        catch (error) {
-            console.error("Failed to update online status:", error);
-        }
-    });
-    socket.on("disconnect", async () => {
-        if (!socket.userId)
-            return;
-        console.log(socket.userId);
-        onlineUsers.delete(socket.userId);
-        try {
-            await User_1.User.updateOne({ _id: socket.userId }, { status: "offline" });
-            console.log(`User ${socket.userId} marked as offline`);
-            await broadcastOnlineUsers();
-            // ✅ Notify others
-            socket.broadcast.emit("user_status_change", {
-                userId: socket.userId,
-                status: "offline",
-            });
-        }
-        catch (error) {
-            console.error("Failed to update offline status:", error);
-        }
-    });
-    socket.emit("online_users", Array.from(onlineUsers.keys()));
-    // Handle message
-    socket.on("send_message", (message) => {
-        const { receiverId } = message;
-        const receiverSocket = onlineUsers.get(receiverId);
-        if (receiverSocket) {
-            io.to(receiverSocket).emit("receive_message", message);
-        }
-    });
-});
+// ✅ Setup socket events
+(0, socket_1.setupSocket)(io);
 // MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/buzzchat";
 mongoose_1.default
