@@ -5,7 +5,8 @@ import app from "./server"; // your Express app
 import { Socket } from "socket.io";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { setupSocket } from "./sockets/socket";
-
+import dotenv from 'dotenv';
+dotenv.config();
 
 interface CustomSocket extends Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any> {
   userId?: string;

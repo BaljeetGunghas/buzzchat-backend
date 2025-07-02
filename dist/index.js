@@ -9,6 +9,8 @@ const socket_io_1 = require("socket.io");
 const mongoose_1 = __importDefault(require("mongoose"));
 const server_1 = __importDefault(require("./server")); // your Express app
 const socket_1 = require("./sockets/socket");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 // 2. Create HTTP server from Express app
 const httpServer = (0, http_1.createServer)(server_1.default);
 const allowedOrigins = [

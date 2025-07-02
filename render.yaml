@@ -5,3 +5,12 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     autoDeploy: true
+
+
+
+  # //  "scripts": {
+  # //   "build": "tsc",
+  # //   "start": "node dist/index.js",
+  # //   "dev": "nodemon src/index.ts",
+  # //   "test": "echo \"Error: no test specified\" && exit 1"
+  # // },
