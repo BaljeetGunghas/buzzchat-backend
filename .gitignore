@@ -38,6 +38,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Ignore ffmpeg.exe
-hotel-web-backend/Controller/ffmpeg.exe
