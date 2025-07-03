@@ -57,3 +57,26 @@ export const getOnlineUsers = async (req: AuthRequest, res: Response) => {
     res.status(500).json(resFormat(500, 'Server error', null, 0));
   }
 };
+
+
+export const searchUsersByName = async (req: Request, res: Response) => {
+  try {
+    const query = req.query.query as string;
+
+    if (!query || query.trim() === "") {
+      return res
+        .status(400)
+        .json(resFormat(400, "Search query is required", null));
+    }
+
+    const regex = new RegExp(query, "i");
+    const users = await User.find({
+      name: regex,
+    }).select("-password -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires");
+
+    res.status(200).json(resFormat(200, "Users fetched successfully", users));
+  } catch (error) {
+    console.error("Error searching users:", error);
+    res.status(500).json(resFormat(500, "Server error", null, 0));
+  }
+};
