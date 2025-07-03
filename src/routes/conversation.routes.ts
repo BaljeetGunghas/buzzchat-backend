@@ -2,7 +2,6 @@
 
 import { Router } from 'express';
 import {
-  getOrCreateConversation,
   getUserChatList,
   getUserConversations
 } from '../controllers/conversation.controller';

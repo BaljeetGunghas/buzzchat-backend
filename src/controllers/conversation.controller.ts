@@ -95,13 +95,21 @@ export const getUserChatList = async (req: Request, res: Response) => {
 
         const sentByMe = lastMessage?.senderId.toString() === userId;
 
+        // Count unread messages for this conversation for the logged-in user
+        const unreadCount = await Message.countDocuments({
+          conversationId: conv._id,
+          receiverId: userId,
+          isRead: false,
+        });
+
         return {
           _id: conv._id,
           participants: otherParticipants[0], // only one other participant
           lastMessage: lastMessage?.content || null,
           lastMessageTime: lastMessage?.createdAt || conv.updatedAt,
           isRead: lastMessage?.isRead ?? true,
-          sentByMe, // ✅ indicates if the logged-in user sent the last message
+          sentByMe, // indicates if the logged-in user sent the last message
+          unreadCount, // new field for unread messages count
         };
       })
     );
