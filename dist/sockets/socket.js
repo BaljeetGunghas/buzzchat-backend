@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupSocket = void 0;
-// src/socket.ts or ./socket.ts
+// src/socket.ts
 const User_1 = require("../models/User");
-// Maintain userId to Set of socket ids
+const Message_1 = require("../models/Message");
 const onlineUsers = new Map();
 const setupSocket = (io) => {
     const broadcastOnlineUsers = () => {
@@ -12,15 +12,14 @@ const setupSocket = (io) => {
     };
     io.on("connection", (socket) => {
         console.log(`Socket connected: ${socket.id}`);
+        // Join
         socket.on("join", async (userId) => {
             socket.userId = userId;
-            console.log(socket.userId);
             const existingSockets = onlineUsers.get(userId) || new Set();
             existingSockets.add(socket.id);
             onlineUsers.set(userId, existingSockets);
             try {
                 await User_1.User.updateOne({ _id: userId }, { status: "online" });
-                console.log(`User ${userId} marked as online`);
                 broadcastOnlineUsers();
                 socket.broadcast.emit("user_status_change", {
                     userId,
@@ -31,6 +30,7 @@ const setupSocket = (io) => {
                 console.error("Failed to update online status:", error);
             }
         });
+        // Disconnect
         socket.on("disconnect", async () => {
             if (!socket.userId)
                 return;
@@ -42,7 +42,6 @@ const setupSocket = (io) => {
                 onlineUsers.delete(socket.userId);
                 try {
                     await User_1.User.updateOne({ _id: socket.userId }, { status: "offline" });
-                    console.log(`User ${socket.userId} marked as offline`);
                     broadcastOnlineUsers();
                     socket.broadcast.emit("user_status_change", {
                         userId: socket.userId,
@@ -57,7 +56,7 @@ const setupSocket = (io) => {
                 broadcastOnlineUsers();
             }
         });
-        socket.emit("online_users", Array.from(onlineUsers.keys()));
+        // Send message
         socket.on("send_message", (message) => {
             const { receiverId } = message;
             const receiverSockets = onlineUsers.get(receiverId);
@@ -67,6 +66,20 @@ const setupSocket = (io) => {
                 });
             }
         });
+        // ✅ Mark messages as read
+        socket.on("mark_as_read", async ({ conversationId, userId }) => {
+            console.log(conversationId, userId);
+            try {
+                await Message_1.Message.updateMany({ conversationId, receiverId: userId, isRead: false }, { $set: { isRead: true } });
+                // Optionally: notify sender(s) that messages were read
+                io.emit("messages_read", { conversationId, userId });
+            }
+            catch (err) {
+                console.error("Failed to mark messages as read:", err);
+            }
+        });
+        // Initial emit of online users
+        socket.emit("online_users", Array.from(onlineUsers.keys()));
     });
 };
 exports.setupSocket = setupSocket;

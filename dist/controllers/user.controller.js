@@ -1,7 +1,7 @@
 "use strict";
 // src/controllers/userController.ts
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOnlineUsers = exports.getUserById = exports.getAllUsers = void 0;
+exports.searchUsersByName = exports.getOnlineUsers = exports.getUserById = exports.getAllUsers = void 0;
 const User_1 = require("../models/User");
 const resFormat_1 = require("../utils/resFormat");
 // Get all users (excluding password and sensitive fields)
@@ -46,3 +46,23 @@ const getOnlineUsers = async (req, res) => {
     }
 };
 exports.getOnlineUsers = getOnlineUsers;
+const searchUsersByName = async (req, res) => {
+    try {
+        const query = req.query.query;
+        if (!query || query.trim() === "") {
+            return res
+                .status(400)
+                .json((0, resFormat_1.resFormat)(400, "Search query is required", null));
+        }
+        const regex = new RegExp(query, "i");
+        const users = await User_1.User.find({
+            name: regex,
+        }).select("-password -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires");
+        res.status(200).json((0, resFormat_1.resFormat)(200, "Users fetched successfully", users));
+    }
+    catch (error) {
+        console.error("Error searching users:", error);
+        res.status(500).json((0, resFormat_1.resFormat)(500, "Server error", null, 0));
+    }
+};
+exports.searchUsersByName = searchUsersByName;
