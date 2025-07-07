@@ -1,9 +1,9 @@
 // import { forgotPassword, loginUser, registerUser } from '../controllers/auth.controller';
 
 import { authMiddleware } from '../middlewares/auth';
-import { forgotPassword, loginUser, logoutUser, registerUser, resetPassword, updateProfile } from '../controllers/auth.controller';
+import { forgotPassword, googleLogin, loginUser, logoutUser, registerUser, resetPassword, updateProfile } from '../controllers/auth.controller';
 import { Router } from 'express';
-import upload  from '../Helper/uploadMiddleware';
+import upload from '../Helper/uploadMiddleware';
 
 const router = Router();
 
@@ -19,6 +19,7 @@ router.put("/profile-update", authMiddleware, upload.single("profile_picture"), 
 
 router.post("/logoutUser", authMiddleware, logoutUser);
 
+router.post("/google-login", googleLogin)
 
 
 export default router;
