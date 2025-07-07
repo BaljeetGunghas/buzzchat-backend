@@ -28,7 +28,19 @@ app.use(cookieParser());
 
 // Routes...
 
+
+
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use("/api/message", messageRoutes);
+app.get("/api/", (req, res) => res.send("BuzzChat API is running 🚀"));
+
+
+
 app.get("/", (_req, res) => {
+  console.log('hello');
+  
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -44,12 +56,5 @@ app.get("/", (_req, res) => {
     </html>
   `);
 });
-
-
-app.get("/api/", (req, res) => res.send("BuzzChat API is running 🚀"));
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/conversations", conversationRoutes);
-app.use("/api/message", messageRoutes);
 
 export default app;
